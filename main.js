@@ -6,44 +6,76 @@ L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={
   id: 'mapbox.streets',
   accessToken: 'pk.eyJ1IjoiY2FtcGJlbGxyIiwiYSI6ImNqdmlwNXYyejA4Y2c0OG9qYnAyanlxdncifQ.t6djm2dI83fR6xpD4G1lhQ'
 }).addTo(map);
-var goodwillIcon = L.icon({
-  iconUrl: 'url goes here',
-  shadowUrl: 'url goes here',
-  iconSize: [20, 20],
+var greenIcon = L.icon({
+  iconUrl: 'icons/green.png',
+  iconSize: [12, 12],
   iconAnchor: [0, 0],
-  shadowAnchor: [20, 20],
-  popupAnchor: [20, 20],
+  popupAnchor: [6, 0]
 });
+var yellowIcon = L.icon({
+  iconUrl: 'icons/yellow.png',
+  iconSize: [12, 12],
+  iconAnchor: [0, 0],
+  popupAnchor: [6, 0]
+});
+var orangeIcon = L.icon({
+  iconUrl: 'icons/orange.png',
+  iconSize: [12, 12],
+  iconAnchor: [0, 0],
+  popupAnchor: [6, 0]
+});
+var redIcon = L.icon({
+  iconUrl: 'icons/red.png',
+  iconSize: [12, 12],
+  iconAnchor: [0, 0],
+  popupAnchor: [6, 0]
+});
+var button1 = document.getElementById('button1');
 
 function fetchData() {
-  fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.geojson')
+  fetch('https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2019-01-01&endtime=2019-07-30&minlatitude=31&maxlatitude=40&minlongitude=-125&maxlongitude=-110&minmagnitude=4&maxmagnitude=10')
     .then(function(response) {
       return response.json();
     })
     .then(function(data) {
-      for(i=0;i<data.features.length;i++){
-        console.log(data.features[i].geometry.coordinates[0])
-        var marker = L.marker([data.features[i].geometry.coordinates[1],data.features[i].geometry.coordinates[0]]).addTo(map);
-      }
-      //do something with that data
-      //console.log(data.features[0].geometry.coordinates[1]);
+      //console.log(data);
+      for (i = 0; i < data.features.length; i++) {
+        function switchIcons(feature, latlng) {
+          switch (feature.properties.alert) {
+            case 'green':
+              return L.marker(latlng, {
+                icon: greenIcon
+              });
+            case 'yellow':
+              return L.marker(latlng, {
+                icon: yellowIcon
+              });
+            case 'orange':
+              return L.marker(latlng, {
+                icon: orangeIcon
+              });
+            case 'red':
+              return L.marker(latlng, {
+                icon: redIcon
+              });
 
+          }
+        }
+        geoJsonLayer = L.geoJson(data, {
+          pointToLayer: switchIcons,
+          onEachFeature: function(feature, geoJsonLayer) {
+            geoJsonLayer.bindPopup('<p><b>Magnitude: </b>' + feature.properties.mag + '<br><b>Location: </b>' + feature.properties.place + '<br><b> Alert: </b>' + feature.properties.alert + '<br><a href="'+feature.properties.url+'"> Click here to see more information.</p>');
+          }
+        });
+      }
     });
 }
 fetchData();
 
-
-
-
-
-
-
-
-// var fruits = ['apple','oranges','grapes','mangos','plums'];
-// function myLoop(){
-//   for(i=0;i<fruits.length;i++){
-//     console.log(fruits[i])
-//
-//   }
-// }
-// myLoop();
+button1.addEventListener('click', function() {
+  if (map.hasLayer(geoJsonLayer)) {
+    map.removeLayer(geoJsonLayer);
+  } else {
+    geoJsonLayer.addTo(map);
+  }
+})
